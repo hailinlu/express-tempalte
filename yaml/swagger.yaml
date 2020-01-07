@@ -1,0 +1,397 @@
+openapi: 3.0.1
+info:
+  title: Swagger TestServer
+  description: This is a sample test server
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    name: lhl
+    email: 15077887670@163.com
+  license:
+    name: MIT
+    url: "http://opensource.org/licenses/MIT"
+  version: 0.0.1
+servers:
+  - url: "http://127.0.0.1:3000/"
+  - url: "http://116.62.119.221:3000/"
+  # - url: 'http://192.168.0.44:3000/'
+tags:
+  - name: User
+    description: 用户管理
+  - name: File
+    description: 文件管理
+paths:
+  /users/register:
+    post:
+      tags:
+        - User
+      summary: 注册新用户
+      operationId: registerUser
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              required:
+                - emailAddress
+                - password
+                - permission
+                - userName
+              properties:
+                userName:
+                  type: string
+                  description: 用户名
+                password:
+                  type: string
+                  description: 密码
+                phoneNumber:
+                  type: string
+                  description: 联系方式
+                emailAddress:
+                  type: string
+                  description: 邮件地址
+                permission:
+                  type: array
+                  description: 权限
+                  items:
+                    type: string
+                    default: 管理
+                    enum:
+                      - 管理
+                      - 编辑
+                      - 浏览
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseBody"
+        "400":
+          description: Invalid supplied
+          content: {}
+        "404":
+          description: resource not found
+          content: {}
+  /users/userlist:
+    post:
+      tags:
+        - User
+      summary: 获取用户列表
+      requestBody:
+        description: 分页参数
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/filterParams"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "404":
+          description: Resource Not Found
+          content: {}
+      security:
+        - Bearer: []
+        # - cookieAuth: []
+      x-codegen-request-body-name: filterParams
+  /users/login:
+    get:
+      tags:
+        - User
+      summary: 用户登录
+      parameters:
+        - name: userName
+          in: query
+          description: The user name for login
+          required: true
+          schema:
+            type: string
+        - name: password
+          in: query
+          description: The password for login in clear text
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          headers:
+            X-Rate-Limit:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+            X-Expires-After:
+              description: date in UTC when token expires
+              schema:
+                type: string
+                format: date-time
+            Set-Cookie:
+              schema:
+                type: string
+                example: user.name=test; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseBody"
+        "400":
+          description: Invalid username/password supplied
+          content: {}
+  /users/register/all:
+    post:
+      tags:
+        - User
+      summary: 批量注册用户
+      requestBody:
+        description: List of user object
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/RegisterUser"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/ResponseBody"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseBody"
+        "404":
+          description: Resource Not Found
+          content: {}
+      security:
+        - Bearer: []
+      x-codegen-request-body-name: body
+  /file/upload:
+    post:
+      tags:
+        - File
+      summary: 上传文件
+      operationId: uploadFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  type: string
+                  description: file to upload
+                  format: binary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseBody"
+      security:
+        - Bearer: []
+  "/file/download/{fileName}":
+    get:
+      tags:
+        - File
+      summary: 下载文件
+      operationId: downLoadFile
+      parameters:
+        - name: fileName
+          in: path
+          description: 文件名
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content: {}
+        "404":
+          description: Resource Not Found
+          content: {}
+      security:
+        - Bearer: []
+  /file/filelist:
+    get:
+      tags:
+        - File
+      summary: 文件列表展示
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "404":
+          description: Resource Not Found
+          content: {}
+      security:
+        - Bearer: []
+  "/file/down/{id}":
+    get:
+      tags:
+        - File
+      summary: 下载文件
+      parameters:
+        - name: id
+          in: path
+          description: 文件Id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content: {}
+        "404":
+          description: Resource Not Found
+          content: {}
+      security:
+        - Bearer: []
+  /file/renderconfig:
+    get:
+      tags:
+        - File
+      summary: 获取前端渲染配置json
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+      security:
+        - Bearer: []
+  /file/saveRenderConfig:
+    post:
+      tags:
+        - File
+      summary: 保存前端配置化json文件
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                renderConfig:
+                  type: object
+                  description: 数据对象
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseBody"
+        "404":
+          description: Resource Not Found
+          content: {}
+      security:
+        - Bearer: []
+components:
+  schemas:
+    ResponseBody:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 返回码
+          format: int64
+          default: 200
+        success:
+          type: boolean
+          description: 操作是否成功
+          default: true
+        message:
+          type: string
+          description: 服务器返回信息
+        token:
+          type: string
+          description: 服务器生成的token
+      description: 响应实体
+      xml:
+        name: ResponseBody
+    filterParams:
+      type: object
+      properties:
+        pageIndex:
+          type: integer
+          description: 页码
+          format: int64
+          default: 1
+        pageSize:
+          type: integer
+          description: 每页记录数
+          format: int64
+      xml:
+        name: filterParams
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: uuid
+        userName:
+          type: string
+          description: 用户名
+        phoneNumber:
+          type: string
+          description: 联系方式
+        emailAddress:
+          type: string
+          description: 邮箱地址
+        permission:
+          type: string
+          description: 权限
+          enum:
+            - 管理
+            - 编辑
+            - 浏览
+      xml:
+        name: User
+    RegisterUser:
+      type: object
+      properties:
+        userName:
+          type: string
+          description: 用户名
+        password:
+          type: string
+          description: 密码
+        phoneNumber:
+          type: string
+          description: 联系方式
+        emailAddress:
+          type: string
+          description: 邮箱地址
+        permission:
+          type: string
+          description: 权限
+          enum:
+            - 管理
+            - 编辑
+            - 浏览
+      xml:
+        name: RegisterUser
+  securitySchemes:
+    Bearer:
+      type: apiKey
+      description: jwt 验证
+      name: Authorization
+      in: header
+    cookieAuth:
+      description: Session key to identify user session.
+      type: apiKey
+      in: cookie
+      name: skey
